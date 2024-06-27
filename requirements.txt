@@ -164,7 +164,7 @@ referencing==0.32.1
 regex==2023.10.3
 requests==2.31.0
 requests-toolbelt==1.0.0
-roboflow==1.1.12
+roboflow
 rpds-py==0.17.1
 s3transfer==0.7.0
 safetensors==0.3.3
@@ -185,7 +185,7 @@ SQLAlchemy==2.0.22
 sqlparse==0.4.4
 stack-data==0.6.3
 starlette==0.35.1
-supervision==0.6.0
+supervision
 svgpathtools==1.6.1
 svgwrite==1.4.3
 sympy==1.12
