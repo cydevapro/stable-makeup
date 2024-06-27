@@ -1,4 +1,4 @@
-accelerate==0.23.0
+accelerate
 addict==2.4.0
 aiofiles==23.2.1
 aiohttp==3.8.6
@@ -31,11 +31,11 @@ cssselect2==0.7.0
 cssutils==2.9.0
 cycler==0.10.0
 Cython==3.0.8
-datasets==2.14.6
+datasets
 decorator
 defusedxml==0.7.1
 Deprecated==1.2.14
-diffusers==0.25.1
+diffusers
 dill==0.3.7
 Django==4.2.7
 dlib==19.24.2
@@ -58,14 +58,15 @@ fsspec==2023.9.2
 fvcore==0.1.5.post20221221
 gitdb==4.0.10
 GitPython==3.1.37
-gradio==3.27.0
-gradio_client==0.8.0
+gradio
+gradio_client
 greenlet==3.0.1
 -e git+https://github.com/IDEA-Research/GroundingDINO.git@57535c5a79791cb76e36fdb64975271354f10251#egg=groundingdino
 h11==0.14.0
 hjson==3.1.0
 httpcore==1.0.2
 httpx==0.26.0
+huggingface-hub
 humanfriendly==10.0
 idna==2.10
 imagecorruptions==1.1.2
@@ -192,9 +193,9 @@ tabulate==0.9.0
 termcolor==2.4.0
 threadpoolctl==3.2.0
 tifffile==2023.9.26
-timm==0.9.12
+timm
 tinycss2==1.2.1
-tokenizers==0.14.0
+tokenizers
 tomli==2.0.1
 toolz==0.12.0
 torch==2.0.1
