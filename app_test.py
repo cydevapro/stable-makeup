@@ -49,6 +49,7 @@ def run_ngrok(port):
 
     while True:
         output = process.stdout.readline()
+        print(output)
         if not output and process.poll() is not None:
             break
         elif b'url=' in output:
@@ -61,4 +62,4 @@ if __name__ == '__main__':
     port = 5000
     ngrok_url = run_ngrok(port)
     print(f" * Running on {ngrok_url}")
-    app.run(debug=True,host='0.0.0.0', port=5000)
+    app.run(debug=True,host='0.0.0.0', port=5001)
