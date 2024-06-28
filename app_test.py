@@ -1,3 +1,6 @@
+import subprocess
+import time
+
 from flask import Flask, request, send_file, jsonify, url_for
 from PIL import Image, ImageFilter
 import os
@@ -41,5 +44,21 @@ def upload_file():
         return jsonify({"processed_image_url": processed_url}), 200
 
 
+def run_ngrok(port):
+    ngrok_path = 'ngrok'
+    command = '{} http {} -log=stdout'.format(ngrok_path, port)
+    process = subprocess.Popen(command.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    while True:
+        output = process.stdout.readline()
+        if b"ngrok.io" in output:
+            break
+        time.sleep(0.1)
+    ngrok_url = output.strip().decode("utf-8")
+    return ngrok_url
+
+
 if __name__ == '__main__':
+    port = 5000
+    ngrok_url = run_ngrok(port)
+    print(f" * Running on {ngrok_url}")
     app.run(debug=True,host='0.0.0.0', port=5000)
