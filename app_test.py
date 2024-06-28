@@ -45,7 +45,7 @@ def upload_file():
 
 
 def run_ngrok(port):
-    process = subprocess.Popen(f'ngrok tcp {port} --log "stdout"', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    process = subprocess.Popen(f'ngrok tcp {port} --log=stdout', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     while True:
         output = process.stdout.readline()
