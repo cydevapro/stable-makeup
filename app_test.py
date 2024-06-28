@@ -45,20 +45,20 @@ def upload_file():
 
 
 def run_ngrok(port):
-    ngrok_path = 'ngrok'
-    command = '{} http {} -log=stdout'.format(ngrok_path, port)
-    process = subprocess.Popen(command.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    process = subprocess.Popen(f'ngrok tcp {port} --log "stdout"', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
     while True:
         output = process.stdout.readline()
-        if b"ngrok.io" in output:
+        if not output and process.poll() is not None:
             break
-        time.sleep(0.1)
-    ngrok_url = output.strip().decode("utf-8")
-    return ngrok_url
+        elif b'url=' in output:
+            output = output.decode()
+            output = output[output.index('url=tcp://') + 10: -1]
+            return output.split(':')
 
 
 if __name__ == '__main__':
-    # port = 5000
-    # ngrok_url = run_ngrok(port)
-    # print(f" * Running on {ngrok_url}")
+    port = 5000
+    ngrok_url = run_ngrok(port)
+    print(f" * Running on {ngrok_url}")
     app.run(debug=True,host='0.0.0.0', port=5000)
