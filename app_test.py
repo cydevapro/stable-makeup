@@ -58,7 +58,7 @@ def run_ngrok(port):
 
 
 if __name__ == '__main__':
-    port = 5000
-    ngrok_url = run_ngrok(port)
-    print(f" * Running on {ngrok_url}")
+    # port = 5000
+    # ngrok_url = run_ngrok(port)
+    # print(f" * Running on {ngrok_url}")
     app.run(debug=True,host='0.0.0.0', port=5000)
