@@ -1,6 +1,10 @@
-import torch
-from flask import Flask, request, jsonify, url_for
+import os
 
+import ngrok
+import torch
+from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from diffusers import UNet2DConditionModel as OriginalUNet2DConditionModel
 from diffusers import DDIMScheduler, ControlNetModel
 from diffusers.utils import load_image
@@ -10,28 +14,51 @@ from spiga_draw import *
 from spiga.inference.config import ModelConfig
 from spiga.inference.framework import SPIGAFramework
 from facelib import FaceDetector
+from PIL import Image
 
-app = Flask(__name__)
+app = FastAPI()
 
-# Khởi tạo các biến và mô hình
+
+def run_ngrok(port):
+    listener = ngrok.forward(port,'tcp' ,authtoken="2YtApGcOINFy3F3oA7T0uxIkIIn_nie3EqfnyfaoyMieAiZC")
+    # Output ngrok url to console
+    return listener.url()
+
+
+ngrok_url = run_ngrok(5001).replace('tcp','http')
+print(f" * Running on {ngrok_url}")
+
+# Configure upload and output folders
+UPLOAD_FOLDER = './uploads'
+OUTPUT_FOLDER = './outputs'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+
+# Mount static files for serving processed images
+app.mount("/static", StaticFiles(directory=OUTPUT_FOLDER), name="static")
+
+# Initialize models
 processor = SPIGAFramework(ModelConfig("300wpublic"))
 detector = FaceDetector(weight_path="./models/mobilenet0.25_Final.pth")
 
-model_id = "runwayml/stable-diffusion-v1-5"  # Đường dẫn đến model Stable Diffusion v1.5
+model_id = "runwayml/stable-diffusion-v1-5"
 makeup_encoder_path = "./models/stablemakeup/pytorch_model.bin"
 id_encoder_path = "./models/stablemakeup/pytorch_model_1.bin"
 pose_encoder_path = "./models/stablemakeup/pytorch_model_2.bin"
-Unet = OriginalUNet2DConditionModel.from_pretrained(model_id, subfolder="unet").to("cpu")
 
+Unet = OriginalUNet2DConditionModel.from_pretrained(model_id, subfolder="unet").to("cpu")
 id_encoder = ControlNetModel.from_unet(Unet)
 pose_encoder = ControlNetModel.from_unet(Unet)
 makeup_encoder = detail_encoder(Unet, "openai/clip-vit-large-patch14", "cpu", dtype=torch.float32)
+
 makeup_state_dict = torch.load(makeup_encoder_path, map_location=torch.device('cpu'))
 id_state_dict = torch.load(id_encoder_path, map_location=torch.device('cpu'))
 pose_state_dict = torch.load(pose_encoder_path, map_location=torch.device('cpu'))
+
 id_encoder.load_state_dict(id_state_dict, strict=False)
 pose_encoder.load_state_dict(pose_state_dict, strict=False)
 makeup_encoder.load_state_dict(makeup_state_dict, strict=False)
+
 id_encoder.to("cpu")
 pose_encoder.to("cpu")
 makeup_encoder.to("cpu")
@@ -65,8 +92,8 @@ def transfer(id_image_path, makeup_image_path, output_path):
     makeup_image = load_image(makeup_image_path).resize((512, 512))
     pose_image = get_draw(id_image, size=512)
 
-    guidance_scale = 3.1  # Điều chỉnh scale
-    num_inference_steps = 50  # Số lần lặp inference
+    guidance_scale = 3.1  # Adjust scale
+    num_inference_steps = 50  # Number of inference steps
 
     result_img = makeup_encoder.generate(id_image=[id_image, pose_image],
                                          makeup_image=makeup_image,
@@ -77,28 +104,28 @@ def transfer(id_image_path, makeup_image_path, output_path):
     result_img.save(output_path)
 
 
-@app.route('/transfer/v1/', methods=['POST'])
-def transfer_endpoint():
-    if 'id_image' not in request.files or 'makeup_image' not in request.files:
-        return jsonify({"error": "Missing image files"}), 400
+@app.post("/transfer/v1/")
+async def transfer_endpoint(id_image: UploadFile = File(...), makeup_image: UploadFile = File(...)):
+    if not (is_image_file(id_image.filename) and is_image_file(makeup_image.filename)):
+        raise HTTPException(status_code=400, detail="Invalid image files")
 
-    id_image_file = request.files['id_image']
-    makeup_image_file = request.files['makeup_image']
+    id_image_path = os.path.join(UPLOAD_FOLDER, id_image.filename)
+    makeup_image_path = os.path.join(UPLOAD_FOLDER, makeup_image.filename)
+    output_path = os.path.join(OUTPUT_FOLDER, f"output_{id_image.filename}_{makeup_image.filename}")
 
-    id_image_path = os.path.join(app.config['UPLOAD_FOLDER'], id_image_file.filename)
-    makeup_image_path = os.path.join(app.config['UPLOAD_FOLDER'], makeup_image_file.filename)
-    output_path = os.path.join(app.config['OUTPUT_FOLDER'],
-                               f"output_{id_image_file.filename}_{makeup_image_file.filename}")
+    with open(id_image_path, "wb") as f:
+        f.write(await id_image.read())
 
-    id_image_file.save(id_image_path)
-    makeup_image_file.save(makeup_image_path)
+    with open(makeup_image_path, "wb") as f:
+        f.write(await makeup_image.read())
 
     transfer(id_image_path, makeup_image_path, output_path)
 
-    # Trả về URL của ảnh đã xử lý
-    processed_url = url_for('static', filename=f'processed_images/{os.path.basename(output_path)}', _external=True)
-    return jsonify({"result_image": processed_url}), 200
+    processed_url = f"/static/{os.path.basename(output_path)}"
+    return JSONResponse(content={"result_image": processed_url}, status_code=200)
 
 
-if __name__ == '__main__':
-    app.run(debug=True)
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host="0.0.0.0", port=5001, log_level="debug")

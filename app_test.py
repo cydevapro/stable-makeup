@@ -1,65 +1,54 @@
 import subprocess
 import time
-
-from flask import Flask, request, send_file, jsonify, url_for
-from PIL import Image, ImageFilter
 import os
 
-app = Flask(__name__)
+from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+from PIL import Image, ImageFilter
+
+import ngrok
+
+app = FastAPI()
 
 UPLOAD_FOLDER = 'uploads'
 PROCESSED_FOLDER = 'static/processed_images'
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['PROCESSED_FOLDER'] = PROCESSED_FOLDER
-
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
-
-if not os.path.exists(PROCESSED_FOLDER):
-    os.makedirs(PROCESSED_FOLDER)
-
-
-@app.route('/transfer/v1/', methods=['POST'])
-def upload_file():
-    if 'file' not in request.files:
-        return jsonify({"error": "No file part"}), 400
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({"error": "No selected file"}), 400
-
-    if file:
-        filename = file.filename
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
-
-        # Xử lý ảnh
-        image = Image.open(filepath)
-        processed_image = image.filter(ImageFilter.BLUR)
-        processed_filename = f"processed_{filename}"
-        processed_filepath = os.path.join(app.config['PROCESSED_FOLDER'], processed_filename)
-        processed_image.save(processed_filepath)
-
-        # Trả về URL của ảnh đã xử lý
-        processed_url = url_for('static', filename=f'processed_images/{processed_filename}', _external=True)
-        return jsonify({"processed_image_url": processed_url}), 200
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(PROCESSED_FOLDER, exist_ok=True)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 def run_ngrok(port):
-    process = subprocess.Popen(f'ngrok tcp {port} --log=stdout', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-    while True:
-        output = process.stdout.readline()
-        print(output)
-        if not output and process.poll() is not None:
-            break
-        elif b'url=' in output:
-            output = output.decode()
-            output = output[output.index('url=tcp://') + 10: -1]
-            return output.split(':')
+    listener = ngrok.forward(port,'tcp' ,authtoken="2YtApGcOINFy3F3oA7T0uxIkIIn_nie3EqfnyfaoyMieAiZC")
+    # Output ngrok url to console
+    return listener.url()
 
 
-if __name__ == '__main__':
-    port = 5000
-    ngrok_url = run_ngrok(port)
-    print(f" * Running on {ngrok_url}")
-    app.run(debug=True,host='0.0.0.0', port=5001)
+ngrok_url = run_ngrok(5001).replace('tcp','http')
+print(f" * Running on {ngrok_url}")
+
+
+@app.post("/transfer/v1/")
+async def upload_file(file: UploadFile = File(...)):
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="No selected file")
+
+    filepath = os.path.join(UPLOAD_FOLDER, file.filename)
+    with open(filepath, "wb") as buffer:
+        buffer.write(await file.read())
+
+    # Process the image
+    image = Image.open(filepath)
+    processed_image = image.filter(ImageFilter.BLUR)
+    processed_filename = f"processed_{file.filename}"
+    processed_filepath = os.path.join(PROCESSED_FOLDER, processed_filename)
+    processed_image.save(processed_filepath)
+
+    # Return the URL of the processed image
+    processed_url = f"{ngrok_url}/static/processed_images/{processed_filename}"
+    return JSONResponse(content={"processed_image_url": processed_url}, status_code=200)
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=5001, log_level="debug")
