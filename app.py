@@ -46,29 +46,29 @@ makeup_encoder_path = "./models/stablemakeup/pytorch_model.bin"
 id_encoder_path = "./models/stablemakeup/pytorch_model_1.bin"
 pose_encoder_path = "./models/stablemakeup/pytorch_model_2.bin"
 
-Unet = OriginalUNet2DConditionModel.from_pretrained(model_id, subfolder="unet").to("cpu")
+Unet = OriginalUNet2DConditionModel.from_pretrained(model_id, subfolder="unet").to("cuda")
 id_encoder = ControlNetModel.from_unet(Unet)
 pose_encoder = ControlNetModel.from_unet(Unet)
-makeup_encoder = detail_encoder(Unet, "openai/clip-vit-large-patch14", "cpu", dtype=torch.float32)
+makeup_encoder = detail_encoder(Unet, "openai/clip-vit-large-patch14", "cuda", dtype=torch.float32)
 
-makeup_state_dict = torch.load(makeup_encoder_path, map_location=torch.device('cpu'))
-id_state_dict = torch.load(id_encoder_path, map_location=torch.device('cpu'))
-pose_state_dict = torch.load(pose_encoder_path, map_location=torch.device('cpu'))
+makeup_state_dict = torch.load(makeup_encoder_path, map_location=torch.device('cuda'))
+id_state_dict = torch.load(id_encoder_path, map_location=torch.device('cuda'))
+pose_state_dict = torch.load(pose_encoder_path, map_location=torch.device('cuda'))
 
 id_encoder.load_state_dict(id_state_dict, strict=False)
 pose_encoder.load_state_dict(pose_state_dict, strict=False)
 makeup_encoder.load_state_dict(makeup_state_dict, strict=False)
 
-id_encoder.to("cpu")
-pose_encoder.to("cpu")
-makeup_encoder.to("cpu")
+id_encoder.to("cuda")
+pose_encoder.to("cuda")
+makeup_encoder.to("cuda")
 
 pipe = StableDiffusionControlNetPipeline.from_pretrained(
     model_id,
     safety_checker=None,
     unet=Unet,
     controlnet=[id_encoder, pose_encoder],
-    torch_dtype=torch.float32).to("cpu")
+    torch_dtype=torch.float32).to("cuda")
 pipe.scheduler = DDIMScheduler.from_config(pipe.scheduler.config)
 
 
@@ -92,7 +92,7 @@ def transfer(id_image_path, makeup_image_path, output_path):
     makeup_image = load_image(makeup_image_path).resize((512, 512))
     pose_image = get_draw(id_image, size=512)
 
-    guidance_scale = 3.1  # Adjust scale
+    guidance_scale = 1.1  # Adjust scale
     num_inference_steps = 50  # Number of inference steps
 
     result_img = makeup_encoder.generate(id_image=[id_image, pose_image],
