@@ -121,8 +121,8 @@ async def transfer_endpoint(id_image: UploadFile = File(...), makeup_image: Uplo
 
     transfer(id_image_path, makeup_image_path, output_path)
 
-    processed_url = f"/static/{os.path.basename(output_path)}"
-    return JSONResponse(content={"result_image": processed_url}, status_code=200)
+    processed_url = f"{ngrok_url}/static/{os.path.basename(output_path)}"
+    return JSONResponse(content={"result_img": processed_url}, status_code=200)
 
 
 if __name__ == "__main__":
