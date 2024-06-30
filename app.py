@@ -20,12 +20,12 @@ app = FastAPI()
 
 
 def run_ngrok(port):
-    listener = ngrok.forward(port,'tcp' ,authtoken="2YtApGcOINFy3F3oA7T0uxIkIIn_nie3EqfnyfaoyMieAiZC")
+    listener = ngrok.forward(port,'http' ,authtoken="2YtApGcOINFy3F3oA7T0uxIkIIn_nie3EqfnyfaoyMieAiZC")
     # Output ngrok url to console
     return listener.url()
 
 
-ngrok_url = run_ngrok(5001).replace('tcp','http')
+ngrok_url = run_ngrok(5001)
 print(f" * Running on {ngrok_url}")
 
 # Configure upload and output folders
