@@ -93,7 +93,7 @@ def transfer(id_image_path, makeup_image_path, output_path):
     pose_image = get_draw(id_image, size=512)
 
     guidance_scale = 1.1  # Adjust scale
-    num_inference_steps = 20  # Number of inference steps
+    num_inference_steps = 50  # Number of inference steps
 
     result_img = makeup_encoder.generate(id_image=[id_image, pose_image],
                                          makeup_image=makeup_image,
