@@ -8,7 +8,7 @@ from training.inference import Inference
 from training.utils import create_logger, print_args
 
 
-def transfer(id_image_path, makeup_image_path, output_path):
+def transfer_v2(id_image_path, makeup_image_path, output_path):
     class Args:
         def __init__(self):
             self.save_path = 'result'
