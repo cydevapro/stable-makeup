@@ -20,7 +20,7 @@ app = FastAPI()
 
 
 def run_ngrok(port):
-    listener = ngrok.forward(port,'http' ,authtoken="2YtApGcOINFy3F3oA7T0uxIkIIn_nie3EqfnyfaoyMieAiZC")
+    listener = ngrok.forward(port, 'http', authtoken="2YtApGcOINFy3F3oA7T0uxIkIIn_nie3EqfnyfaoyMieAiZC")
     # Output ngrok url to console
     return listener.url()
 
@@ -105,6 +105,27 @@ def transfer(id_image_path, makeup_image_path, output_path):
 
 
 @app.post("/transfer/v1/")
+async def transfer_endpoint(id_image: UploadFile = File(...), makeup_image: UploadFile = File(...)):
+    if not (is_image_file(id_image.filename) and is_image_file(makeup_image.filename)):
+        raise HTTPException(status_code=400, detail="Invalid image files")
+
+    id_image_path = os.path.join(UPLOAD_FOLDER, id_image.filename)
+    makeup_image_path = os.path.join(UPLOAD_FOLDER, makeup_image.filename)
+    output_path = os.path.join(OUTPUT_FOLDER, f"output_{id_image.filename}_{makeup_image.filename}.png")
+
+    with open(id_image_path, "wb") as f:
+        f.write(await id_image.read())
+
+    with open(makeup_image_path, "wb") as f:
+        f.write(await makeup_image.read())
+
+    transfer(id_image_path, makeup_image_path, output_path)
+
+    processed_url = f"{ngrok_url}/static/{os.path.basename(output_path)}"
+    return JSONResponse(content={"result_img": processed_url}, status_code=200)
+
+
+@app.post("/transfer/v2/")
 async def transfer_endpoint(id_image: UploadFile = File(...), makeup_image: UploadFile = File(...)):
     if not (is_image_file(id_image.filename) and is_image_file(makeup_image.filename)):
         raise HTTPException(status_code=400, detail="Invalid image files")
