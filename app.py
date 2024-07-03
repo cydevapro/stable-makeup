@@ -93,7 +93,7 @@ def transfer(id_image_path, makeup_image_path, output_path):
     pose_image = get_draw(id_image, size=512)
 
     guidance_scale = 1.1  # Adjust scale
-    num_inference_steps = 30  # Number of inference steps
+    num_inference_steps = 50  # Number of inference steps
 
     result_img = makeup_encoder.generate(id_image=[id_image, pose_image],
                                          makeup_image=makeup_image,
@@ -111,7 +111,7 @@ async def transfer_endpoint(id_image: UploadFile = File(...), makeup_image: Uplo
 
     id_image_path = os.path.join(UPLOAD_FOLDER, id_image.filename)
     makeup_image_path = os.path.join(UPLOAD_FOLDER, makeup_image.filename)
-    output_path = os.path.join(OUTPUT_FOLDER, f"output_{id_image.filename}_{makeup_image.filename}")
+    output_path = os.path.join(OUTPUT_FOLDER, f"output_{id_image.filename}_{makeup_image.filename}.png")
 
     with open(id_image_path, "wb") as f:
         f.write(await id_image.read())
