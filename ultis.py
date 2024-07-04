@@ -7,7 +7,7 @@ def update_link(value):
 
     payload = json.dumps({
         "key": "DOMAIN_AI",
-        "value": f"{value}/transfer/v2/"
+        "value": f"{value}/transfer/v1/"
     })
     headers = {
         'Content-Type': 'application/json'
