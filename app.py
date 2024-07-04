@@ -79,15 +79,15 @@ detector = FaceDetector(weight_path="./models/mobilenet0.25_Final.pth")
 # pipe.scheduler = DDIMScheduler.from_config(pipe.scheduler.config)
 
 
-def get_draw(pil_img, size):
-    spigas = spiga_process(pil_img, detector)
-    if not spigas:
-        width, height = pil_img.size
-        black_image_pil = Image.new('RGB', (width, height), color=(0, 0, 0))
-        return black_image_pil
-    else:
-        spigas_faces = spiga_segmentation(spigas, size=size)
-        return spigas_faces
+# def get_draw(pil_img, size):
+#     spigas = spiga_process(pil_img, detector)
+#     if not spigas:
+#         width, height = pil_img.size
+#         black_image_pil = Image.new('RGB', (width, height), color=(0, 0, 0))
+#         return black_image_pil
+#     else:
+#         spigas_faces = spiga_segmentation(spigas, size=size)
+#         return spigas_faces
 
 
 def is_image_file(filename):
