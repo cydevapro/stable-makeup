@@ -13,7 +13,7 @@ def transfer_v2(id_image_path, makeup_image_path, output_path):
         def __init__(self):
             self.save_path = 'result'
             self.load_path = 'ckpts/sow_pyramid_a5_e3d2_remapped.pth'
-            self.gpu = 'cuda'
+            self.gpu = 'cpu'
 
     args = Args()
     args.device = torch.device(args.gpu)
