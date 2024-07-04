@@ -17,6 +17,9 @@ from PIL import Image
 from eleGANt import transfer_v2
 
 import torch
+
+from ultis import update_link
+
 torch.cuda.empty_cache()
 
 app = FastAPI()
@@ -29,6 +32,7 @@ def run_ngrok(port):
 
 
 ngrok_url = run_ngrok(5001)
+update_link(ngrok_url)
 print(f" * Running on {ngrok_url}")
 
 # Configure upload and output folders
