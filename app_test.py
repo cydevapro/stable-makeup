@@ -9,8 +9,7 @@ from PIL import Image, ImageFilter
 
 import ngrok
 
-from eleGANt import transfer
-
+from eleGANt import transfer_v2
 
 app = FastAPI()
 
@@ -73,7 +72,7 @@ async def transfer_endpoint(id_image: UploadFile = File(...), makeup_image: Uplo
     with open(makeup_image_path, "wb") as f:
         f.write(await makeup_image.read())
 
-    transfer(id_image_path, makeup_image_path, output_path)
+    transfer_v2(id_image_path, makeup_image_path, output_path)
 
     processed_url = f"{ngrok_url}/static/{os.path.basename(output_path)}"
     return JSONResponse(content={"result_img": processed_url}, status_code=200)
