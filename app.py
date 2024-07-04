@@ -16,6 +16,8 @@ from PIL import Image
 
 from eleGANt import transfer_v2
 
+import torch
+torch.cuda.empty_cache()
 
 app = FastAPI()
 
