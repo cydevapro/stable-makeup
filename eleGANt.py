@@ -6,6 +6,7 @@ import torch
 from training.config import get_config
 from training.inference import Inference
 from training.utils import create_logger, print_args
+from upscale import upscale_image
 
 
 def transfer_v2(id_image_path, makeup_image_path, output_path):
@@ -39,3 +40,5 @@ def transfer_v2(id_image_path, makeup_image_path, output_path):
     result = np.array(result)
     vis_image = np.hstack((imgA, imgB, result))
     Image.fromarray(result.astype(np.uint8)).save(output_path)
+
+    upscale_image(output_path,output_path)
