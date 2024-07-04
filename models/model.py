@@ -1,8 +1,12 @@
+import pkgutil
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.models import VGG as TVGG
-from torchvision.models.vgg import model_urls, cfgs
+from torchvision.models.vgg import cfgs
+from importlib import import_module
+import torchvision
 
 
 try:
@@ -12,6 +16,21 @@ except ImportError:
 
 from .modules.spectral_norm import spectral_norm as SpectralNorm
 from .elegant import Generator
+
+
+def get_torchvision_models():
+    model_urls = dict()
+    for _, name, ispkg in pkgutil.walk_packages(torchvision.models.__path__):
+        if ispkg:
+            continue
+        _zoo = import_module(f'torchvision.models.{name}')
+        if hasattr(_zoo, 'model_urls'):
+            _urls = getattr(_zoo, 'model_urls')
+            model_urls.update(_urls)
+    return model_urls
+
+
+model_urls = get_torchvision_models()
 
 
 def get_generator(config):
