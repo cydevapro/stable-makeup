@@ -11,6 +11,9 @@ import torch.nn.init as init
 device = 'dml'
 
 
+core_device = 'cuda'
+
+
 def make_layer(block, n_layers):
     layers = []
     for _ in range(n_layers):
@@ -131,7 +134,7 @@ def uint_to_tensor4(img):
 
 
 def adapt_image_for_deeplearning(img, device):
-    backend = torch.device('cpu')
+    backend = torch.device(core_device)
 
     img = image_to_uint(img, n_channels=3)
     img = uint_to_tensor4(img)
@@ -164,7 +167,7 @@ def prepare_AI_model(AI_model, device):
     for _, v in model.named_parameters():
         v.requires_grad = False
 
-    model = model.to('cpu', non_blocking=True)
+    model = model.to(core_device, non_blocking=True)
 
     return model
 

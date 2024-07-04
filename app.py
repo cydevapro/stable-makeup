@@ -48,35 +48,35 @@ app.mount("/static", StaticFiles(directory=OUTPUT_FOLDER), name="static")
 processor = SPIGAFramework(ModelConfig("300wpublic"))
 detector = FaceDetector(weight_path="./models/mobilenet0.25_Final.pth")
 
-model_id = "runwayml/stable-diffusion-v1-5"
-makeup_encoder_path = "./models/stablemakeup/pytorch_model.bin"
-id_encoder_path = "./models/stablemakeup/pytorch_model_1.bin"
-pose_encoder_path = "./models/stablemakeup/pytorch_model_2.bin"
-
-Unet = OriginalUNet2DConditionModel.from_pretrained(model_id, subfolder="unet").to("cuda")
-id_encoder = ControlNetModel.from_unet(Unet)
-pose_encoder = ControlNetModel.from_unet(Unet)
-makeup_encoder = detail_encoder(Unet, "openai/clip-vit-large-patch14", "cuda", dtype=torch.float32)
-
-makeup_state_dict = torch.load(makeup_encoder_path, map_location=torch.device('cuda'))
-id_state_dict = torch.load(id_encoder_path, map_location=torch.device('cuda'))
-pose_state_dict = torch.load(pose_encoder_path, map_location=torch.device('cuda'))
-
-id_encoder.load_state_dict(id_state_dict, strict=False)
-pose_encoder.load_state_dict(pose_state_dict, strict=False)
-makeup_encoder.load_state_dict(makeup_state_dict, strict=False)
-
-id_encoder.to("cuda")
-pose_encoder.to("cuda")
-makeup_encoder.to("cuda")
-
-pipe = StableDiffusionControlNetPipeline.from_pretrained(
-    model_id,
-    safety_checker=None,
-    unet=Unet,
-    controlnet=[id_encoder, pose_encoder],
-    torch_dtype=torch.float32).to("cuda")
-pipe.scheduler = DDIMScheduler.from_config(pipe.scheduler.config)
+# model_id = "runwayml/stable-diffusion-v1-5"
+# makeup_encoder_path = "./models/stablemakeup/pytorch_model.bin"
+# id_encoder_path = "./models/stablemakeup/pytorch_model_1.bin"
+# pose_encoder_path = "./models/stablemakeup/pytorch_model_2.bin"
+#
+# Unet = OriginalUNet2DConditionModel.from_pretrained(model_id, subfolder="unet").to("cuda")
+# id_encoder = ControlNetModel.from_unet(Unet)
+# pose_encoder = ControlNetModel.from_unet(Unet)
+# makeup_encoder = detail_encoder(Unet, "openai/clip-vit-large-patch14", "cuda", dtype=torch.float32)
+#
+# makeup_state_dict = torch.load(makeup_encoder_path, map_location=torch.device('cuda'))
+# id_state_dict = torch.load(id_encoder_path, map_location=torch.device('cuda'))
+# pose_state_dict = torch.load(pose_encoder_path, map_location=torch.device('cuda'))
+#
+# id_encoder.load_state_dict(id_state_dict, strict=False)
+# pose_encoder.load_state_dict(pose_state_dict, strict=False)
+# makeup_encoder.load_state_dict(makeup_state_dict, strict=False)
+#
+# id_encoder.to("cuda")
+# pose_encoder.to("cuda")
+# makeup_encoder.to("cuda")
+#
+# pipe = StableDiffusionControlNetPipeline.from_pretrained(
+#     model_id,
+#     safety_checker=None,
+#     unet=Unet,
+#     controlnet=[id_encoder, pose_encoder],
+#     torch_dtype=torch.float32).to("cuda")
+# pipe.scheduler = DDIMScheduler.from_config(pipe.scheduler.config)
 
 
 def get_draw(pil_img, size):
@@ -94,42 +94,42 @@ def is_image_file(filename):
     return any(filename.endswith(extension) for extension in ['.png', '.jpg', '.jpeg', '.PNG', '.JPG', '.JPEG'])
 
 
-def transfer(id_image_path, makeup_image_path, output_path):
-    id_image = load_image(id_image_path).resize((512, 512))
-    makeup_image = load_image(makeup_image_path).resize((512, 512))
-    pose_image = get_draw(id_image, size=512)
+# def transfer(id_image_path, makeup_image_path, output_path):
+#     id_image = load_image(id_image_path).resize((512, 512))
+#     makeup_image = load_image(makeup_image_path).resize((512, 512))
+#     pose_image = get_draw(id_image, size=512)
+#
+#     guidance_scale = 1.1  # Adjust scale
+#     num_inference_steps = 50  # Number of inference steps
+#
+#     result_img = makeup_encoder.generate(id_image=[id_image, pose_image],
+#                                          makeup_image=makeup_image,
+#                                          pipe=pipe,
+#                                          guidance_scale=guidance_scale,
+#                                          num_inference_steps=num_inference_steps)
+#
+#     result_img.save(output_path)
 
-    guidance_scale = 1.1  # Adjust scale
-    num_inference_steps = 50  # Number of inference steps
 
-    result_img = makeup_encoder.generate(id_image=[id_image, pose_image],
-                                         makeup_image=makeup_image,
-                                         pipe=pipe,
-                                         guidance_scale=guidance_scale,
-                                         num_inference_steps=num_inference_steps)
-
-    result_img.save(output_path)
-
-
-@app.post("/transfer/v1/")
-async def transfer_endpoint(id_image: UploadFile = File(...), makeup_image: UploadFile = File(...)):
-    if not (is_image_file(id_image.filename) and is_image_file(makeup_image.filename)):
-        raise HTTPException(status_code=400, detail="Invalid image files")
-
-    id_image_path = os.path.join(UPLOAD_FOLDER, id_image.filename)
-    makeup_image_path = os.path.join(UPLOAD_FOLDER, makeup_image.filename)
-    output_path = os.path.join(OUTPUT_FOLDER, f"output_{id_image.filename}_{makeup_image.filename}.png")
-
-    with open(id_image_path, "wb") as f:
-        f.write(await id_image.read())
-
-    with open(makeup_image_path, "wb") as f:
-        f.write(await makeup_image.read())
-
-    transfer(id_image_path, makeup_image_path, output_path)
-
-    processed_url = f"{ngrok_url}/static/{os.path.basename(output_path)}"
-    return JSONResponse(content={"result_img": processed_url}, status_code=200)
+# @app.post("/transfer/v1/")
+# async def transfer_endpoint(id_image: UploadFile = File(...), makeup_image: UploadFile = File(...)):
+#     if not (is_image_file(id_image.filename) and is_image_file(makeup_image.filename)):
+#         raise HTTPException(status_code=400, detail="Invalid image files")
+#
+#     id_image_path = os.path.join(UPLOAD_FOLDER, id_image.filename)
+#     makeup_image_path = os.path.join(UPLOAD_FOLDER, makeup_image.filename)
+#     output_path = os.path.join(OUTPUT_FOLDER, f"output_{id_image.filename}_{makeup_image.filename}.png")
+#
+#     with open(id_image_path, "wb") as f:
+#         f.write(await id_image.read())
+#
+#     with open(makeup_image_path, "wb") as f:
+#         f.write(await makeup_image.read())
+#
+#     transfer(id_image_path, makeup_image_path, output_path)
+#
+#     processed_url = f"{ngrok_url}/static/{os.path.basename(output_path)}"
+#     return JSONResponse(content={"result_img": processed_url}, status_code=200)
 
 
 @app.post("/transfer/v2/")
